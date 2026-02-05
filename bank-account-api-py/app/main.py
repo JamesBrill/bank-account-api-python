@@ -47,44 +47,37 @@ def populate_account_data(db):
     if existing:
         return
     
-    names = [
-        "John Smith",
-        "Maria Garcia",
-        "Mohammed Khan",
-        "Sophie Dubois",
-        "Liam Johnson",
-        "Emma Martinez",
-        "Noah Lee",
-        "Olivia Kim",
+    # Realistic customer data
+    customers = [
+        ("James Anderson", "ACC-2847-6193-0001", 15420.50),
+        ("Sarah Thompson", "ACC-2847-6193-0002", 3240.75),
+        ("Michael Chen", "ACC-2847-6193-0003", 87650.00),
+        ("Emily Rodriguez", "ACC-2847-6193-0004", 542.80),
+        ("David Wilson", "ACC-2847-6193-0005", 28900.25),
+        ("Jessica Martinez", "ACC-2847-6193-0006", 6755.40),
+        ("Christopher Brown", "ACC-2847-6193-0007", 125000.00),
+        ("Amanda Taylor", "ACC-2847-6193-0008", 1820.15),
+        ("Daniel Garcia", "ACC-2847-6193-0009", 45300.60),
+        ("Michelle Lee", "ACC-2847-6193-0010", 890.00),
+        ("Robert Johnson", "ACC-2847-6193-0011", 72400.80),
+        ("Jennifer Davis", "ACC-2847-6193-0012", 19650.25),
+        ("William Martinez", "ACC-2847-6193-0013", 4125.90),
+        ("Ashley Anderson", "ACC-2847-6193-0014", 98500.00),
+        ("Matthew Thomas", "ACC-2847-6193-0015", 2340.50),
+        ("Lauren White", "ACC-2847-6193-0016", 55780.30),
+        ("Joshua Harris", "ACC-2847-6193-0017", 8920.00),
+        ("Samantha Clark", "ACC-2847-6193-0018", 165000.00),
+        ("Andrew Lewis", "ACC-2847-6193-0019", 12450.75),
+        ("Megan Walker", "ACC-2847-6193-0020", 34200.60),
     ]
+    
     accounts = []
-
-    for i in range(20):
-        account = BankAccount(
-            i + 1, f"Account {i}", names[i % len(names)], random.randint(10, 10010)
-        )
+    for i, (name, acc_num, balance) in enumerate(customers, start=1):
+        account = BankAccount(i, acc_num, name, balance)
         accounts.append(account)
 
-    for from_acc in accounts:
-        for to_acc in accounts:
-            if from_acc != to_acc:
-                try:
-                    transfer_amt = round(random.random() * from_acc.balance)
-                    if transfer_amt > from_acc.balance:
-                        continue
-
-                    from_acc.withdraw(transfer_amt, "Debit")
-                    to_acc.deposit(transfer_amt, "Credit")
-
-                    print(
-                        f"Transfer: ${transfer_amt} from {from_acc.account_number} "
-                        f"({from_acc.account_holder_name}) to {to_acc.account_number} "
-                        f"({to_acc.account_holder_name})"
-                    )
-                except Exception as e:
-                    print(f"Transfer failed: {str(e)}")
-
     BankAccountService.initialize_accounts(db, accounts)
+    print(f"Initialized {len(accounts)} bank accounts with realistic data")
 
 
 @app.get("/")
