@@ -7,8 +7,12 @@ export interface BankAccount {
   
   const API_BASE_URL = "http://localhost:3000/api/BankAccount"; 
   
-  export const fetchBankAccounts = async (): Promise<BankAccount[]> => {
-    const response = await fetch(API_BASE_URL);
+  export const fetchBankAccounts = async (nameFilter?: string): Promise<BankAccount[]> => {
+    const url = nameFilter 
+      ? `${API_BASE_URL}?name=${encodeURIComponent(nameFilter)}`
+      : API_BASE_URL;
+    
+    const response = await fetch(url);
     if (!response.ok) {
       throw new Error("Failed to fetch bank accounts");
     }

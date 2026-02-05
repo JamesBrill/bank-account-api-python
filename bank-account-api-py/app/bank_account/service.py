@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 from sqlalchemy.orm import Session
 from ..database import BankAccountDB
 from .model import BankAccount
@@ -6,8 +6,13 @@ from .model import BankAccount
 
 class BankAccountService:
     @classmethod
-    def get_all_accounts(cls, db: Session) -> List[BankAccount]:
-        db_accounts = db.query(BankAccountDB).all()
+    def get_all_accounts(cls, db: Session, name_filter: Optional[str] = None) -> List[BankAccount]:
+        query = db.query(BankAccountDB)
+        
+        if name_filter:
+            query = query.filter(BankAccountDB.account_holder_name.ilike(f"%{name_filter}%"))
+        
+        db_accounts = query.all()
         return [
             BankAccount(
                 a.id, a.account_number, a.account_holder_name, a.balance

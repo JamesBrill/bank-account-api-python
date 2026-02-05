@@ -8,29 +8,52 @@ import {
   DialogActions, 
   Button, 
   TextField,
-  Alert
+  Alert,
+  Box,
+  InputAdornment,
+  IconButton
 } from '@mui/material';
+import SearchIcon from '@mui/icons-material/Search';
+import ClearIcon from '@mui/icons-material/Clear';
 
 const BankAccountTable = () => {
   const [accounts, setAccounts] = useState<BankAccount[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogType, setDialogType] = useState<'deposit' | 'withdraw'>('deposit');
   const [selectedAccount, setSelectedAccount] = useState<BankAccount | null>(null);
   const [amount, setAmount] = useState('');
   const [transactionError, setTransactionError] = useState<string | null>(null);
 
+  // Debounced search effect
   useEffect(() => {
-    loadAccounts();
-  }, []);
+    const timeoutId = setTimeout(() => {
+      loadAccounts(searchTerm);
+    }, 300);
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm]);
 
-  const loadAccounts = async () => {
+  const loadAccounts = async (nameFilter?: string) => {
     try {
-      const data = await fetchBankAccounts();
+      setIsLoading(true);
+      setError(null);
+      const data = await fetchBankAccounts(nameFilter);
       setAccounts(data);
     } catch (err) {
       setError("Failed to load accounts");
+    } finally {
+      setIsLoading(false);
     }
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+  };
+
+  const handleClearSearch = () => {
+    setSearchTerm('');
   };
 
   const openDialog = (account: BankAccount, type: 'deposit' | 'withdraw') => {
@@ -63,7 +86,7 @@ const BankAccountTable = () => {
       } else {
         await withdrawMoney(selectedAccount.id, numAmount);
       }
-      await loadAccounts();
+      await loadAccounts(searchTerm);
       closeDialog();
     } catch (err: any) {
       setTransactionError(err.message || 'Transaction failed');
@@ -74,9 +97,37 @@ const BankAccountTable = () => {
     <div className="table-wrapper">
       <h2 className="title">Bank Accounts</h2>
       
+      {/* Search Box */}
+      <Box sx={{ mb: 3 }}>
+        <TextField
+          fullWidth
+          placeholder="Search by account holder name..."
+          value={searchTerm}
+          onChange={handleSearchChange}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon />
+              </InputAdornment>
+            ),
+            endAdornment: searchTerm && (
+              <InputAdornment position="end">
+                <IconButton onClick={handleClearSearch} size="small">
+                  <ClearIcon />
+                </IconButton>
+              </InputAdornment>
+            ),
+          }}
+        />
+      </Box>
+      
       <div className="table-container">
         {error ? (
           <p className="error">{error}</p>
+        ) : isLoading ? (
+          <p>Loading accounts...</p>
+        ) : accounts.length === 0 ? (
+          <p>No accounts found{searchTerm ? ` matching "${searchTerm}"` : ''}.</p>
         ) : (
           <table className="account-table">
             <thead>

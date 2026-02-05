@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 from fastapi import APIRouter, HTTPException, Response, status, Depends
 from sqlalchemy.orm import Session
 from ..database import get_db
@@ -9,8 +9,8 @@ router = APIRouter(prefix="/api/BankAccount", tags=["BankAccount"])
 
 
 @router.get("", response_model=List[dict])
-def get_all_accounts(db: Session = Depends(get_db)):
-    accounts = BankAccountService.get_all_accounts(db)
+def get_all_accounts(name: Optional[str] = None, db: Session = Depends(get_db)):
+    accounts = BankAccountService.get_all_accounts(db, name)
     return [account.to_dict() for account in accounts]
 
 
