@@ -16,18 +16,13 @@ import AnnoyingPopupManager from './components/AnnoyingPopupManager';
  * 
  * User experience rating: -47/10
  * 
- * UPDATE: Now with emergency kill switch for sanity restoration
+ * UPDATE: Emergency kill switch only works until page refresh
  */
 
-const KILL_SWITCH_KEY = 'popupsAndClippyDisabled';
-
 function App() {
-  const [isAnnoyanceDisabled, setIsAnnoyanceDisabled] = useState(() => {
-    return localStorage.getItem(KILL_SWITCH_KEY) === 'true';
-  });
+  const [isAnnoyanceDisabled, setIsAnnoyanceDisabled] = useState(false);
 
   const handleKillSwitch = () => {
-    localStorage.setItem(KILL_SWITCH_KEY, 'true');
     setIsAnnoyanceDisabled(true);
   };
 
@@ -62,7 +57,7 @@ function App() {
               transition: 'all 0.2s',
             }}
           >
-            🚨 KILL ALL POPUPS FOREVER 🚨
+            🚨 KILL POPUPS (THIS SESSION) 🚨
           </Button>
         </Box>
       )}
