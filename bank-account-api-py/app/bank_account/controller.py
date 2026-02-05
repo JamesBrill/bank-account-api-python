@@ -40,3 +40,30 @@ def update_account(id: int, account: dict, db: Session = Depends(get_db)):
 def delete_account(id: int, db: Session = Depends(get_db)):
     BankAccountService.delete_account(db, id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post("/{id}/deposit", status_code=status.HTTP_200_OK)
+def deposit(id: int, request: dict, db: Session = Depends(get_db)):
+    amount = request.get("amount")
+    if not amount or amount <= 0:
+        raise HTTPException(status_code=400, detail="Amount must be positive")
+    
+    account = BankAccountService.get_account_by_id(db, id)
+    account.deposit(amount, "Credit")
+    BankAccountService.update_account(db, account)
+    return account.to_dict()
+
+
+@router.post("/{id}/withdraw", status_code=status.HTTP_200_OK)
+def withdraw(id: int, request: dict, db: Session = Depends(get_db)):
+    amount = request.get("amount")
+    if not amount or amount <= 0:
+        raise HTTPException(status_code=400, detail="Amount must be positive")
+    
+    account = BankAccountService.get_account_by_id(db, id)
+    try:
+        account.withdraw(amount, "Debit")
+        BankAccountService.update_account(db, account)
+        return account.to_dict()
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
