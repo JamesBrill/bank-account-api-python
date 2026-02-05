@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from .bank_account.controller import router as bank_account_router
 from .bank_account.model import BankAccount
 from .bank_account.service import BankAccountService
+from .mortgage.controller import router as mortgage_router
 from .prime.controller import router as prime_router
 
 
@@ -25,6 +26,7 @@ app.add_middleware(
 )
 
 app.include_router(bank_account_router)
+app.include_router(mortgage_router)
 app.include_router(prime_router)
 
 

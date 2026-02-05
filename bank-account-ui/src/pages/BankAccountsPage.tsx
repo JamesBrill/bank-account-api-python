@@ -1,20 +1,31 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Container, Box } from '@mui/material';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import BankAccountTable from '../components/BankAccountTable';
 import MortgageApplicationForm, { Mortgage } from '../components/MortgageApplicationForm';
 import MortgageList from '../components/MortgageList';
+import { fetchMortgages, createMortgage } from '../api/mortgageApi';
 
 const BankAccountsPage = () => {
   const [mortgages, setMortgages] = useState<Mortgage[]>([]);
 
-  const handleMortgageSubmit = (mortgageData: Omit<Mortgage, 'id'>) => {
-    const newMortgage: Mortgage = {
-      ...mortgageData,
-      id: Date.now(),
-    };
-    setMortgages([...mortgages, newMortgage]);
+  useEffect(() => {
+    loadMortgages();
+  }, []);
+
+  const loadMortgages = async () => {
+    try {
+      const data = await fetchMortgages();
+      setMortgages(data);
+    } catch (error) {
+      console.error('Failed to load mortgages:', error);
+    }
+  };
+
+  const handleMortgageSubmit = async (mortgageData: Omit<Mortgage, 'id'>) => {
+    await createMortgage(mortgageData);
+    await loadMortgages();
   };
 
   return (

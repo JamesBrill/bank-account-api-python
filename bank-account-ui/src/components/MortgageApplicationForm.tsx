@@ -6,6 +6,7 @@ import {
   Paper,
   Grid,
   InputAdornment,
+  Alert,
 } from '@mui/material';
 
 export interface Mortgage {
@@ -20,7 +21,7 @@ export interface Mortgage {
 }
 
 interface MortgageApplicationFormProps {
-  onSubmit: (mortgage: Omit<Mortgage, 'id'>) => void;
+  onSubmit: (mortgage: Omit<Mortgage, 'id'>) => Promise<void>;
 }
 
 export default function MortgageApplicationForm({ onSubmit }: MortgageApplicationFormProps) {
@@ -31,40 +32,50 @@ export default function MortgageApplicationForm({ onSubmit }: MortgageApplicatio
     interestRate: '',
     fixedTermYears: '',
   });
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
 
   const handleChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [field]: e.target.value });
+    setError(null);
+    setSuccess(false);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const loanAmount = parseFloat(formData.loanAmount);
-    const interestRate = parseFloat(formData.interestRate);
-    const fixedTermYears = parseInt(formData.fixedTermYears);
-    
-    const applicationDate = new Date().toISOString().split('T')[0];
-    const expiryDate = new Date();
-    expiryDate.setFullYear(expiryDate.getFullYear() + fixedTermYears);
-    
-    onSubmit({
-      applicantName: formData.applicantName,
-      propertyAddress: formData.propertyAddress,
-      loanAmount,
-      interestRate,
-      fixedTermYears,
-      expiryDate: expiryDate.toISOString().split('T')[0],
-      applicationDate,
-    });
+    try {
+      const loanAmount = parseFloat(formData.loanAmount);
+      const interestRate = parseFloat(formData.interestRate);
+      const fixedTermYears = parseInt(formData.fixedTermYears);
+      
+      const applicationDate = new Date().toISOString().split('T')[0];
+      const expiryDate = new Date();
+      expiryDate.setFullYear(expiryDate.getFullYear() + fixedTermYears);
+      
+      await onSubmit({
+        applicantName: formData.applicantName,
+        propertyAddress: formData.propertyAddress,
+        loanAmount,
+        interestRate,
+        fixedTermYears,
+        expiryDate: expiryDate.toISOString().split('T')[0],
+        applicationDate,
+      });
 
-    // Reset form
-    setFormData({
-      applicantName: '',
-      propertyAddress: '',
-      loanAmount: '',
-      interestRate: '',
-      fixedTermYears: '',
-    });
+      // Reset form
+      setFormData({
+        applicantName: '',
+        propertyAddress: '',
+        loanAmount: '',
+        interestRate: '',
+        fixedTermYears: '',
+      });
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 3000);
+    } catch (err) {
+      setError('Failed to submit mortgage application');
+    }
   };
 
   return (
@@ -72,6 +83,9 @@ export default function MortgageApplicationForm({ onSubmit }: MortgageApplicatio
       <Typography variant="h5" gutterBottom sx={{ mb: 3 }}>
         🏠 Mortgage Application
       </Typography>
+      
+      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+      {success && <Alert severity="success" sx={{ mb: 2 }}>Mortgage application submitted successfully!</Alert>}
       
       <form onSubmit={handleSubmit}>
         <Grid container spacing={2}>
