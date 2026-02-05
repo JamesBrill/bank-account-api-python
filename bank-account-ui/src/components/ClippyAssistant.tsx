@@ -58,9 +58,10 @@ export default function ClippyAssistant() {
   const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
   // Randomly change position to be extra annoying
+  // UPGRADED: Now moves MUCH more frequently because apparently we're making everything worse
   useEffect(() => {
     const moveRandomly = setInterval(() => {
-      if (!isDragging && Math.random() > 0.7) {
+      if (!isDragging && Math.random() > 0.3) { // Changed from 0.7 to 0.3 - moves WAY more often
         const maxX = window.innerWidth - 400;
         const maxY = window.innerHeight - 300;
         setPosition({
@@ -70,23 +71,25 @@ export default function ClippyAssistant() {
         setIsShaking(true);
         setTimeout(() => setIsShaking(false), 500);
       }
-    }, 15000);
+    }, 5000); // Changed from 15000 to 5000 - checks 3x more frequently
 
     return () => clearInterval(moveRandomly);
   }, [isDragging]);
 
   // Change messages periodically
+  // UPGRADED: Messages change faster now to match the chaos
   useEffect(() => {
     const changeMessage = setInterval(() => {
       const newMessage = ANNOYING_MESSAGES[Math.floor(Math.random() * ANNOYING_MESSAGES.length)];
       setMessage(newMessage);
       setClippyState(CLIPPY_STATES[Math.floor(Math.random() * CLIPPY_STATES.length)]);
-    }, 8000);
+    }, 4000); // Changed from 8000 to 4000 - twice as frequent!
 
     return () => clearInterval(changeMessage);
   }, []);
 
   // Reappear if dismissed
+  // UPGRADED: Comes back MUCH faster because we're in full chaos mode now
   useEffect(() => {
     if (!visible) {
       timeoutRef.current = setTimeout(() => {
@@ -95,7 +98,7 @@ export default function ClippyAssistant() {
         setPopupCount(prev => prev + 1);
         setIsShaking(true);
         setTimeout(() => setIsShaking(false), 1000);
-      }, 10000);
+      }, 3000); // Changed from 10000 to 3000 - only 3 seconds of peace!
     }
     return () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -221,7 +224,7 @@ export default function ClippyAssistant() {
                 fontStyle: 'italic',
               }}
             >
-              *Forever = 10 seconds. Times dismissed: {popupCount}
+              *Forever = 3 seconds. Times dismissed: {popupCount}. Good luck!
             </Typography>
           </Box>
         </Box>
