@@ -1,10 +1,18 @@
 from typing import List
 from sqlalchemy.orm import Session
-from ..database import MortgageDB
+from fastapi import HTTPException
+from ..database import MortgageDB, BankAccountDB
 from .model import Mortgage
 
 
 class MortgageService:
+    @classmethod
+    def validate_applicant_exists(cls, db: Session, applicant_name: str) -> bool:
+        account = db.query(BankAccountDB).filter(
+            BankAccountDB.account_holder_name.ilike(applicant_name)
+        ).first()
+        return account is not None
+
     @classmethod
     def get_all_mortgages(cls, db: Session) -> List[Mortgage]:
         db_mortgages = db.query(MortgageDB).all()
@@ -20,7 +28,6 @@ class MortgageService:
     def get_mortgage_by_id(cls, db: Session, id: int) -> Mortgage:
         db_mortgage = db.query(MortgageDB).filter(MortgageDB.id == id).first()
         if not db_mortgage:
-            from fastapi import HTTPException
             raise HTTPException(status_code=404, detail=f"Mortgage with ID {id} not found")
         return Mortgage(
             db_mortgage.id, db_mortgage.applicant_name, db_mortgage.property_address,
@@ -30,6 +37,12 @@ class MortgageService:
 
     @classmethod
     def create_mortgage(cls, db: Session, mortgage: Mortgage) -> None:
+        if not cls.validate_applicant_exists(db, mortgage.applicant_name):
+            raise HTTPException(
+                status_code=400,
+                detail="Applicant must be an existing bank account holder"
+            )
+        
         db_mortgage = MortgageDB(
             applicant_name=mortgage.applicant_name,
             property_address=mortgage.property_address,
@@ -46,7 +59,6 @@ class MortgageService:
     def delete_mortgage(cls, db: Session, id: int) -> None:
         db_mortgage = db.query(MortgageDB).filter(MortgageDB.id == id).first()
         if not db_mortgage:
-            from fastapi import HTTPException
             raise HTTPException(status_code=404, detail=f"Mortgage with ID {id} not found")
         db.delete(db_mortgage)
         db.commit()

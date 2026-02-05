@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Button,
   TextField,
@@ -7,7 +7,13 @@ import {
   Grid,
   InputAdornment,
   Alert,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  SelectChangeEvent,
 } from '@mui/material';
+import { fetchBankAccounts } from '../api/bankAccountApi';
 
 export interface Mortgage {
   id: number;
@@ -32,10 +38,34 @@ export default function MortgageApplicationForm({ onSubmit }: MortgageApplicatio
     interestRate: '',
     fixedTermYears: '',
   });
+  const [accountHolders, setAccountHolders] = useState<string[]>([]);
+  const [loadingAccounts, setLoadingAccounts] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
+  useEffect(() => {
+    const loadAccountHolders = async () => {
+      try {
+        setLoadingAccounts(true);
+        const accounts = await fetchBankAccounts();
+        const names = accounts.map(a => a.accountHolderName).sort();
+        setAccountHolders(names);
+      } catch (err) {
+        setError('Failed to load account holders');
+      } finally {
+        setLoadingAccounts(false);
+      }
+    };
+    loadAccountHolders();
+  }, []);
+
   const handleChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, [field]: e.target.value });
+    setError(null);
+    setSuccess(false);
+  };
+
+  const handleSelectChange = (field: string) => (e: SelectChangeEvent) => {
     setFormData({ ...formData, [field]: e.target.value });
     setError(null);
     setSuccess(false);
@@ -73,8 +103,8 @@ export default function MortgageApplicationForm({ onSubmit }: MortgageApplicatio
       });
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
-    } catch (err) {
-      setError('Failed to submit mortgage application');
+    } catch (err: any) {
+      setError(err.message || 'Failed to submit mortgage application');
     }
   };
 
@@ -86,17 +116,28 @@ export default function MortgageApplicationForm({ onSubmit }: MortgageApplicatio
       
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
       {success && <Alert severity="success" sx={{ mb: 2 }}>Mortgage application submitted successfully!</Alert>}
+      {loadingAccounts && <Alert severity="info" sx={{ mb: 2 }}>Loading account holders...</Alert>}
+      {!loadingAccounts && accountHolders.length === 0 && (
+        <Alert severity="warning" sx={{ mb: 2 }}>No bank accounts found. Create an account first.</Alert>
+      )}
       
       <form onSubmit={handleSubmit}>
         <Grid container spacing={2}>
           <Grid item xs={12} md={6}>
-            <TextField
-              fullWidth
-              required
-              label="Applicant Name"
-              value={formData.applicantName}
-              onChange={handleChange('applicantName')}
-            />
+            <FormControl fullWidth required disabled={loadingAccounts || accountHolders.length === 0}>
+              <InputLabel>Applicant Name</InputLabel>
+              <Select
+                value={formData.applicantName}
+                onChange={handleSelectChange('applicantName')}
+                label="Applicant Name"
+              >
+                {accountHolders.map((name) => (
+                  <MenuItem key={name} value={name}>
+                    {name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
           </Grid>
           
           <Grid item xs={12} md={6}>
@@ -157,6 +198,7 @@ export default function MortgageApplicationForm({ onSubmit }: MortgageApplicatio
               color="primary"
               size="large"
               fullWidth
+              disabled={loadingAccounts || accountHolders.length === 0}
             >
               Submit Application
             </Button>
