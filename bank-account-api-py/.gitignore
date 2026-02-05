@@ -34,3 +34,8 @@ env/
 *.swo
 *~
 .DS_Store
+
+# SQLite database files
+*.db
+*.sqlite
+*.sqlite3

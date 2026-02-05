@@ -1,50 +1,72 @@
 from typing import List
-from fastapi import HTTPException
+from sqlalchemy.orm import Session
+from ..database import BankAccountDB
 from .model import BankAccount
 
 
 class BankAccountService:
-    _accounts: List[BankAccount] = []
+    @classmethod
+    def get_all_accounts(cls, db: Session) -> List[BankAccount]:
+        db_accounts = db.query(BankAccountDB).all()
+        return [
+            BankAccount(
+                a.id, a.account_number, a.account_holder_name, a.balance
+            ) for a in db_accounts
+        ]
 
     @classmethod
-    def get_all_accounts(cls) -> List[BankAccount]:
-        return cls._accounts
-
-    @classmethod
-    def get_account_by_id(cls, id: int) -> BankAccount:
-        account = next((acc for acc in cls._accounts if acc.id == id), None)
-        if not account:
+    def get_account_by_id(cls, db: Session, id: int) -> BankAccount:
+        db_account = db.query(BankAccountDB).filter(BankAccountDB.id == id).first()
+        if not db_account:
+            from fastapi import HTTPException
             raise HTTPException(status_code=404, detail=f"Account with ID {id} not found")
-        return account
+        return BankAccount(
+            db_account.id, db_account.account_number, 
+            db_account.account_holder_name, db_account.balance
+        )
 
     @classmethod
-    def add_account(cls, account: BankAccount) -> None:
-        cls._accounts.append(account)
+    def create_account(cls, db: Session, account: BankAccount) -> None:
+        db_account = BankAccountDB(
+            account_number=account.account_number,
+            account_holder_name=account.account_holder_name,
+            balance=account.balance,
+        )
+        db.add(db_account)
+        db.commit()
 
     @classmethod
-    def create_account(cls, account: BankAccount) -> None:
-        account.id = len(cls._accounts) + 1
-        cls._accounts.append(account)
-
-    @classmethod
-    def update_account(cls, updated_account: BankAccount) -> None:
-        index = next((i for i, a in enumerate(cls._accounts) if a.id == updated_account.id), None)
-        if index is None:
+    def update_account(cls, db: Session, updated_account: BankAccount) -> None:
+        db_account = db.query(BankAccountDB).filter(
+            BankAccountDB.id == updated_account.id
+        ).first()
+        if not db_account:
+            from fastapi import HTTPException
             raise HTTPException(
                 status_code=404, detail=f"Account with ID {updated_account.id} not found"
             )
-        cls._accounts[index] = updated_account
+        db_account.account_number = updated_account.account_number
+        db_account.account_holder_name = updated_account.account_holder_name
+        db_account.balance = updated_account.balance
+        db.commit()
 
     @classmethod
-    def delete_account(cls, id: int) -> None:
-        try:
-            index = next((i for i, a in enumerate(cls._accounts) if a.id == id), None)
-            if index is None:
-                raise HTTPException(status_code=404, detail=f"Account with ID {id} not found")
-            cls._accounts.pop(index)
-        except Exception as e:
-            raise HTTPException(status_code=400, detail=f"Could not delete account: {str(e)}")
+    def delete_account(cls, db: Session, id: int) -> None:
+        db_account = db.query(BankAccountDB).filter(BankAccountDB.id == id).first()
+        if not db_account:
+            from fastapi import HTTPException
+            raise HTTPException(status_code=404, detail=f"Account with ID {id} not found")
+        db.delete(db_account)
+        db.commit()
 
     @classmethod
-    def initialize_accounts(cls, accounts: List[BankAccount]) -> None:
-        cls._accounts = accounts
+    def initialize_accounts(cls, db: Session, accounts: List[BankAccount]) -> None:
+        for account in accounts:
+            db_account = BankAccountDB(
+                account_number=account.account_number,
+                account_holder_name=account.account_holder_name,
+                balance=account.balance,
+            )
+            db.add(db_account)
+        db.commit()
+

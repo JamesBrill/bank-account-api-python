@@ -2,6 +2,7 @@ import random
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from .database import init_db, SessionLocal
 from .bank_account.controller import router as bank_account_router
 from .bank_account.model import BankAccount
 from .bank_account.service import BankAccountService
@@ -11,7 +12,15 @@ from .prime.controller import router as prime_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    populate_account_data()
+    init_db()
+    db = SessionLocal()
+    try:
+        # Only populate if DB is empty
+        from .database import BankAccountDB
+        if db.query(BankAccountDB).count() == 0:
+            populate_account_data(db)
+    finally:
+        db.close()
     yield
 
 
@@ -30,7 +39,14 @@ app.include_router(mortgage_router)
 app.include_router(prime_router)
 
 
-def populate_account_data():
+def populate_account_data(db):
+    from .database import BankAccountDB
+    
+    # Check if already populated
+    existing = db.query(BankAccountDB).first()
+    if existing:
+        return
+    
     names = [
         "John Smith",
         "Maria Garcia",
@@ -68,7 +84,7 @@ def populate_account_data():
                 except Exception as e:
                     print(f"Transfer failed: {str(e)}")
 
-    BankAccountService.initialize_accounts(accounts)
+    BankAccountService.initialize_accounts(db, accounts)
 
 
 @app.get("/")
